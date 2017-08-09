@@ -109,7 +109,7 @@
     <distributionManagement>
         <repository>
             <id>team4u-repo</id>
-            <url>https://api.bintray.com/maven/team4u/team4u/SimpleWorkflow/;publish=1</url>
+            <url>https://api.bintray.com/maven/team4u/team4u/DiffRender/;publish=1</url>
         </repository>
     </distributionManagement>
 </project>
