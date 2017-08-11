@@ -21,8 +21,6 @@ public class Size {
 
     @Override
     public String toString() {
-        return "Size{" +
-                "size=" + size +
-                '}';
+        return String.valueOf(size);
     }
 }

@@ -1,4 +1,4 @@
-package org.team4u.diff;
+package org.team4u.diff.render;
 
 import com.xiaoleilu.hutool.util.CollectionUtil;
 import com.xiaoleilu.hutool.util.StrUtil;
@@ -52,6 +52,8 @@ public class ChangeValues {
 
         private List<String> propertyNameFragments = CollectionUtil.newArrayList();
 
+        private Object owner;
+
         // 调整前值
         private Object oldValue;
 
@@ -71,6 +73,15 @@ public class ChangeValues {
 
         public Value setPropertyId(String propertyId) {
             this.propertyId = propertyId;
+            return this;
+        }
+
+        public Object getOwner() {
+            return owner;
+        }
+
+        public Value setOwner(Object owner) {
+            this.owner = owner;
             return this;
         }
 
@@ -128,11 +139,6 @@ public class ChangeValues {
         public String toString() {
             return "Value{" +
                     "propertyId='" + propertyId + '\'' +
-                    ", propertyIdFragments=" + propertyIdFragments +
-                    ", propertyNameFragments=" + propertyNameFragments +
-                    ", oldValue=" + oldValue +
-                    ", newValue=" + newValue +
-                    ", description='" + description + '\'' +
                     '}';
         }
     }

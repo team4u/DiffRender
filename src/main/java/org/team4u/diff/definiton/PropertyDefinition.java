@@ -13,6 +13,8 @@ public class PropertyDefinition {
 
     private String id;
     private String name;
+    private boolean isClass = false;
+    private List<String> idForPropertyNames = CollectionUtil.newArrayList();
     private String referId;
     private String formatter;
     private List<PropertyDefinition> children = CollectionUtil.newArrayList();
@@ -68,6 +70,24 @@ public class PropertyDefinition {
 
     public PropertyDefinition setFormatter(String formatter) {
         this.formatter = formatter;
+        return this;
+    }
+
+    public List<String> getIdForPropertyNames() {
+        return idForPropertyNames;
+    }
+
+    public PropertyDefinition setIdForPropertyNames(List<String> idForPropertyNames) {
+        this.idForPropertyNames = idForPropertyNames;
+        return this;
+    }
+
+    public boolean isClass() {
+        return isClass;
+    }
+
+    public PropertyDefinition setClass(boolean aClass) {
+        isClass = aClass;
         return this;
     }
 

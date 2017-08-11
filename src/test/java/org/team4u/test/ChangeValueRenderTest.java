@@ -1,23 +1,18 @@
 package org.team4u.test;
 
-import com.xiaoleilu.hutool.util.CollectionUtil;
-import org.javers.core.Javers;
-import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
 import org.javers.core.diff.changetype.NewObject;
 import org.javers.core.diff.changetype.ObjectRemoved;
 import org.javers.core.diff.changetype.ValueChange;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
-import org.team4u.diff.ChangeValues;
-import org.team4u.diff.ChangeValuesRender;
-import org.team4u.diff.ValueFormatterRegistry;
 import org.team4u.diff.definiton.PropertyDefinition;
 import org.team4u.diff.definiton.PropertyDefinitionBuilder;
+import org.team4u.diff.render.ChangeValues;
+import org.team4u.diff.render.ChangeValuesRender;
+import org.team4u.diff.render.ValueFormatterRegistry;
 import org.team4u.test.formatter.MyValueFormatter;
-import org.team4u.test.model.Person;
-import org.team4u.test.model.Room;
-import org.team4u.test.model.Size;
 
 import java.util.List;
 import java.util.Map;
@@ -30,11 +25,15 @@ public class ChangeValueRenderTest {
     private Map<String, PropertyDefinition> definitionMap =
             new PropertyDefinitionBuilder("org.team4u.test.model").build();
 
-    private Diff diff = createDiff();
+    private Diff diff = TestUtil.createDiff();
+
+    @BeforeClass
+    public static void beforeClass() {
+        ValueFormatterRegistry.INSTANCE.registerTemplateFunction(MyValueFormatter.class);
+    }
 
     @Test
     public void renderChangeValues() {
-        ValueFormatterRegistry.INSTANCE.registerTemplateFunction(MyValueFormatter.class);
         List<ChangeValues.Value> result = ChangeValuesRender.renderChangeValues(definitionMap, diff.getChangesByType(ValueChange.class));
 
         Assert.assertEquals("[org.team4u.test.model.Person, name]", result.get(0).getPropertyIdFragments().toString());
@@ -57,8 +56,8 @@ public class ChangeValueRenderTest {
     public void renderNewValues() {
         List<ChangeValues.Value> result = ChangeValuesRender.renderNewValues(definitionMap, diff.getChangesByType(NewObject.class));
 
-        Assert.assertEquals("[org.team4u.test.model.Person, room1List]", result.get(0).getPropertyIdFragments().toString());
-        Assert.assertEquals("[个人, 房间列表1]", result.get(0).getPropertyNameFragments().toString());
+        Assert.assertEquals("[org.team4u.test.model.Person, room1List, +]", result.get(0).getPropertyIdFragments().toString());
+        Assert.assertEquals("[个人, 房间列表1, 新增]", result.get(0).getPropertyNameFragments().toString());
         Assert.assertEquals(null, result.get(0).getOldValue());
         Assert.assertEquals("Room{name='b', height=null}", result.get(0).getNewValue().toString());
     }
@@ -67,29 +66,15 @@ public class ChangeValueRenderTest {
     public void renderRemovedValues() {
         List<ChangeValues.Value> result = ChangeValuesRender.renderRemovedValues(definitionMap, diff.getChangesByType(ObjectRemoved.class));
 
-        Assert.assertEquals("[org.team4u.test.model.Person, room3List]", result.get(0).getPropertyIdFragments().toString());
-        Assert.assertEquals("[个人, 房间列表3]", result.get(0).getPropertyNameFragments().toString());
+        Assert.assertEquals("[org.team4u.test.model.Person, room3List, -]", result.get(0).getPropertyIdFragments().toString());
+        Assert.assertEquals("[个人, 房间列表3, 删除]", result.get(0).getPropertyNameFragments().toString());
         Assert.assertEquals("Room{name='a3', height=Size{size=3}}", result.get(0).getOldValue().toString());
         Assert.assertEquals(null, result.get(0).getNewValue());
     }
 
-    private Diff createDiff() {
-        Javers javers = JaversBuilder
-                .javers()
-//                .withListCompareAlgorithm(ListCompareAlgorithm.LEVENSHTEIN_DISTANCE)
-                .build();
-
-        Person tommyOld = new Person("tommy", "Tommy Smart")
-                .setRoom1List(CollectionUtil.newArrayList(new Room().setName("c")))
-                .setRoom2List(CollectionUtil.newArrayList(new Room().setName("a2").setHeight(new Size().setSize(1))))
-                .setRoom3List(CollectionUtil.newArrayList(new Room().setName("a3").setHeight(new Size().setSize(3))));
-
-        Person tommyNew = new Person("tommy", "Tommy C. Smart")
-                .setRoom1List(CollectionUtil.newArrayList(new Room().setName("a"), new Room().setName("b")))
-                .setRoom2List(CollectionUtil.newArrayList(new Room().setName("a2").setHeight(new Size().setSize(2))));
-
-        Diff diff = javers.compare(tommyOld, tommyNew);
-        System.out.println(diff);
-        return diff;
+    @Test
+    public void toPathMap() {
+        Map<String, ?> result = ChangeValuesRender.renderToPathMap(definitionMap, diff);
+        System.out.println(result);
     }
 }

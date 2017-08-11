@@ -1,4 +1,4 @@
-package org.team4u.diff;
+package org.team4u.diff.render;
 
 import com.xiaoleilu.hutool.crypto.SecureUtil;
 import jetbrick.template.JetEngine;
