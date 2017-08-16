@@ -2,12 +2,15 @@
 
 轻量级差异比较渲染器，用于直观地显示两个对象之间的差异。
 
-DiffRender有以下几个特点：
-
+## Features
 * 除Map类型外，支持所有对象的差异渲染
 * 支持中文差异显示
 * 差异值支持自定义函数渲染
 * 生成易于遍历的差异结果，方便渲染，已自带Markdown风格的的HTML渲染器
+
+## System Requirements
+
+JDK 1.8+
 
 ## HOW TO USE
 ### 配置依赖(Maven:pom.xml)
