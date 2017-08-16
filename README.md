@@ -258,7 +258,7 @@ System.out.println(md);
 
 输出结果：
 
-```markdown
+```
 * 【姓名】 原始值：<u>Tommy Smart</u>， 变更值：<u>*Tommy C. Smart</u>
 * 【房间列表2】
   * 【101】
