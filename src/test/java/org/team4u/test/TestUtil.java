@@ -13,25 +13,33 @@ import org.team4u.test.model.Size;
  */
 public class TestUtil {
 
+    public static Person createPerson1() {
+        return new Person("tommy", "Tommy Smart")
+                .setRoom1List(CollectionUtil.newArrayList(new Room().setName("604")))
+                .setRoom2List(CollectionUtil.newArrayList(
+                        new Room().setName("101").setHeight(new Size().setSize(1)),
+                        new Room().setName("201").setHeight(new Size().setSize(2).setDesc("测试1")).setWeight(new Size().setSize(4))))
+                .setRoom3List(CollectionUtil.newArrayList(new Room().setName("201").setHeight(new Size().setSize(3))));
+    }
+
+    public static Person createPerson2() {
+        return new Person("tommy", "Tommy C. Smart")
+                .setRoom1List(CollectionUtil.newArrayList(new Room().setName("601"), new Room().setName("602"), new Room().setName("603")))
+                .setRoom2List(CollectionUtil.newArrayList(
+                        new Room().setName("101").setHeight(new Size().setSize(2)),
+                        new Room().setName("201").setHeight(new Size().setSize(3)).setWeight(new Size().setSize(3)),
+                        new Room().setName("401").setHeight(new Size().setSize(3)).setWeight(new Size().setSize(3))));
+    }
+
     public static Diff createDiff() {
         Javers javers = JaversBuilder
                 .javers()
 //                .withListCompareAlgorithm(ListCompareAlgorithm.LEVENSHTEIN_DISTANCE)
                 .build();
 
-        Person tommyOld = new Person("tommy", "Tommy Smart")
-                .setRoom1List(CollectionUtil.newArrayList(new Room().setName("c")))
-                .setRoom2List(CollectionUtil.newArrayList(
-                        new Room().setName("a2").setHeight(new Size().setSize(1)),
-                        new Room().setName("a3").setHeight(new Size().setSize(2)).setWeight(new Size().setSize(4))))
-                .setRoom3List(CollectionUtil.newArrayList(new Room().setName("a3").setHeight(new Size().setSize(3))));
+        Person tommyOld = createPerson1();
 
-        Person tommyNew = new Person("tommy", "Tommy C. Smart")
-                .setRoom1List(CollectionUtil.newArrayList(new Room().setName("a"), new Room().setName("b"), new Room().setName("d")))
-                .setRoom2List(CollectionUtil.newArrayList(
-                        new Room().setName("a2").setHeight(new Size().setSize(2)),
-                        new Room().setName("a3").setHeight(new Size().setSize(3)).setWeight(new Size().setSize(3)),
-                        new Room().setName("a4").setHeight(new Size().setSize(3)).setWeight(new Size().setSize(3))));
+        Person tommyNew = createPerson2();
 
         Diff diff = javers.compare(tommyOld, tommyNew);
         System.out.println(diff);

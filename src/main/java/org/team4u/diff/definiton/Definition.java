@@ -18,8 +18,6 @@ public @interface Definition {
 
     String value();
 
-    boolean id() default false;
-
     Class<?>[] refer() default {};
 
     String formatter() default "";

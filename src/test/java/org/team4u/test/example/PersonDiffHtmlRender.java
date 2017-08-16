@@ -5,12 +5,12 @@ import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.javers.core.diff.Diff;
-import org.team4u.diff.definiton.PropertyDefinition;
-import org.team4u.diff.definiton.PropertyDefinitionBuilder;
+import org.team4u.diff.definiton.DefinitionBuilder;
+import org.team4u.diff.definiton.DefinitionModel;
+import org.team4u.diff.render.BeanRender;
 import org.team4u.diff.render.ChangeValues;
 import org.team4u.diff.render.ChangeValuesRender;
 import org.team4u.diff.render.ValueFormatterRegistry;
-import org.team4u.kit.core.util.CollectionExUtil;
 import org.team4u.kit.core.util.ValueUtil;
 import org.team4u.test.TestUtil;
 import org.team4u.test.formatter.MyValueFormatter;
@@ -23,16 +23,25 @@ import java.util.Map;
  */
 public class PersonDiffHtmlRender {
 
-    private Map<String, PropertyDefinition> definitionMap =
-            new PropertyDefinitionBuilder("org.team4u.test.model").build();
+    private Map<String, DefinitionModel> definitionMap =
+            new DefinitionBuilder("org.team4u.test.model").build();
 
-    public PersonDiffHtmlRender() {
+    private ChangeValuesRender render;
+
+    private Object oldBean;
+    private Object newBean;
+
+    public PersonDiffHtmlRender(Object oldBean, Object newBean) {
+        this.newBean = newBean;
+        this.oldBean = oldBean;
+        render = new ChangeValuesRender(definitionMap, oldBean, newBean);
+
         ValueFormatterRegistry.INSTANCE.registerTemplateFunction(MyValueFormatter.class);
     }
 
     public static void main(String[] args) {
         Diff diff = TestUtil.createDiff();
-        String md = (new PersonDiffHtmlRender().render(diff));
+        String md = (new PersonDiffHtmlRender(TestUtil.createPerson1(), TestUtil.createPerson2()).render());
         System.out.println(md);
 
         Parser parser = Parser.builder().build();
@@ -41,14 +50,6 @@ public class PersonDiffHtmlRender {
         String html = renderer.render(document);
         html = FileUtil.readUtf8String("person.html").replace("${body}", html);
         FileUtil.writeUtf8String(html, "../result.html");
-
-    }
-
-    public String render(Diff diff) {
-        Map<String, ?> map = ChangeValuesRender.renderToPathMap(definitionMap, diff);
-        StringBuilder builder = new StringBuilder();
-        toMarkdown(map, builder, null);
-        return builder.toString();
     }
 
     // A/[B/[B1/[B1X,B1Y],B2+],C]
@@ -83,22 +84,27 @@ public class PersonDiffHtmlRender {
         }
     }
 
+    public String render() {
+        Map<String, ?> map = render.renderToPathMap();
+        StringBuilder builder = new StringBuilder();
+        toMarkdown(map, builder, null);
+        return builder.toString();
+    }
+
     private void toMarkdown(ChangeValues.Value value, StringBuilder builder) {
-        switch (CollectionExUtil.getLast(value.getPropertyIdFragments())) {
-            case "+":
-                builder.append(" ").append(value.getNewValue())
-                        .append("\n");
-                break;
+        if (value.getOwner() == null) {
+            builder.append(" ");
 
-            case "-":
-                builder.append(" ").append(value.getOldValue())
-                        .append("\n");
-                break;
-
-            default:
-                builder.append(" 变更前值：").append(value.getOldValue())
-                        .append(" 变更后值：").append(value.getNewValue())
-                        .append("\n");
+            if (value.getNewValue() == null) {
+                builder.append("删除 ").append(BeanRender.renderWholeValue(value.getOldValue()));
+            } else {
+                builder.append("新增 ").append(BeanRender.renderWholeValue(value.getNewValue()));
+            }
+        } else {
+            builder.append(" 变更前值：").append(ValueUtil.defaultIfNull(value.getOldValue(), "无"))
+                    .append(", 变更后值：").append(ValueUtil.defaultIfNull(value.getNewValue(), "无"));
         }
+
+        builder.append("\n");
     }
 }

@@ -1,15 +1,16 @@
 package org.team4u.test.model;
 
 import org.team4u.diff.definiton.Definition;
+import org.team4u.diff.definiton.Renderable;
 import org.team4u.kit.core.util.ValueUtil;
 
 /**
  * @author Jay Wu
  */
 @Definition("房间")
-public class Room {
+public class Room implements Renderable {
 
-    @Definition(value = "名称", id = false)
+    @Definition(value = "名称")
     private String name;
 
     @Definition("高度")
@@ -51,5 +52,15 @@ public class Room {
                 ValueUtil.defaultIfNull(name, "无"),
                 ValueUtil.defaultIfNull(height, "无"),
                 ValueUtil.defaultIfNull(weight, "无"));
+    }
+
+    @Override
+    public String renderWholeValue() {
+        return toString();
+    }
+
+    @Override
+    public String renderKeyValue() {
+        return name;
     }
 }

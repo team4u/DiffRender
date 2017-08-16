@@ -1,6 +1,6 @@
 package org.team4u.test.formatter;
 
-import org.team4u.diff.definiton.PropertyDefinition;
+import org.team4u.diff.definiton.DefinitionModel;
 import org.team4u.diff.render.ChangeValues;
 
 /**
@@ -8,7 +8,7 @@ import org.team4u.diff.render.ChangeValues;
  */
 public class MyValueFormatter {
 
-    public static void c(ChangeValues.Value value, PropertyDefinition definition, String prefix) {
+    public static void c(ChangeValues.Value value, DefinitionModel definition, String prefix) {
         value.setNewValue(prefix + value.getNewValue());
     }
 }

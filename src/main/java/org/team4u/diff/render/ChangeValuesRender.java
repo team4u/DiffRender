@@ -1,16 +1,16 @@
 package org.team4u.diff.render;
 
-import com.xiaoleilu.hutool.convert.Convert;
 import com.xiaoleilu.hutool.lang.Dict;
 import com.xiaoleilu.hutool.lang.Validator;
 import com.xiaoleilu.hutool.util.CollectionUtil;
-import com.xiaoleilu.hutool.util.ReflectUtil;
 import com.xiaoleilu.hutool.util.StrUtil;
+import org.javers.core.Javers;
+import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
 import org.javers.core.diff.changetype.NewObject;
 import org.javers.core.diff.changetype.ObjectRemoved;
 import org.javers.core.diff.changetype.ValueChange;
-import org.team4u.diff.definiton.PropertyDefinition;
+import org.team4u.diff.definiton.DefinitionModel;
 import org.team4u.kit.core.action.Callback;
 import org.team4u.kit.core.action.Function;
 import org.team4u.kit.core.util.CollectionExUtil;
@@ -19,28 +19,40 @@ import org.team4u.kit.core.util.MapUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Jay Wu
  */
 public class ChangeValuesRender {
 
-    public static Map<String, ?> renderToPathMap(Map<String, PropertyDefinition> definitions, Diff diff) {
-        ChangeValues values = ChangeValuesRender.render(definitions, diff);
-        return ChangeValuesRender.toPathMap(values);
+    private Map<String, DefinitionModel> definitions;
+
+    private Object oldBean;
+    private Object newBean;
+
+    public ChangeValuesRender(Map<String, DefinitionModel> definitions, Object oldBean, Object newBean) {
+        this.definitions = definitions;
+        this.oldBean = oldBean;
+        this.newBean = newBean;
     }
 
-    public static ChangeValues render(Map<String, PropertyDefinition> definitions, Diff diff) {
+    public Map<String, ?> renderToPathMap() {
+        ChangeValues values = render();
+        return toPathMap(values);
+    }
+
+    public ChangeValues render() {
+        Javers javers = JaversBuilder.javers().build();
+        Diff diff = javers.compare(oldBean, newBean);
+
         ChangeValues changeValues = new ChangeValues();
-        changeValues.setNewValues(renderNewValues(definitions, diff.getChangesByType(NewObject.class)));
-        changeValues.setChangeValues(renderChangeValues(definitions, diff.getChangesByType(ValueChange.class)));
-        changeValues.setRemovedValues(renderRemovedValues(definitions, diff.getChangesByType(ObjectRemoved.class)));
+        changeValues.setNewValues(renderNewValues(diff.getChangesByType(NewObject.class)));
+        changeValues.setChangeValues(renderChangeValues(diff.getChangesByType(ValueChange.class)));
+        changeValues.setRemovedValues(renderRemovedValues(diff.getChangesByType(ObjectRemoved.class)));
         return changeValues;
     }
 
-    public static List<ChangeValues.Value> renderNewValues(Map<String, PropertyDefinition> definitions,
-                                                           List<NewObject> newObjects) {
+    public List<ChangeValues.Value> renderNewValues(List<NewObject> newObjects) {
         List<ChangeValues.Value> allValues = CollectionUtil.newArrayList();
         for (int i = 0; i < newObjects.size(); i++) {
             NewObject newObject = newObjects.get(i);
@@ -49,21 +61,18 @@ public class ChangeValuesRender {
                     .setPropertyId(id)
                     .setNewValue(newObject.getAffectedObject().get());
 
-            initValueWithPath(definitions, value, id);
+            initValueWithPath(value, id, MODE.CREATED);
             allValues.add(value);
         }
 
-        AtomicInteger count = new AtomicInteger();
         return distinctValues(allValues, new Callback<ChangeValues.Value>() {
             @Override
             public void invoke(ChangeValues.Value value) {
-                value.getPropertyIdFragments().add("+");
-                value.getPropertyNameFragments().add("新增:" + count.getAndIncrement());
             }
         });
     }
 
-    public static Map<String, ?> toPathMap(ChangeValues values) {
+    public Map<String, ?> toPathMap(ChangeValues values) {
         List<ChangeValues.Value> allValues = new ArrayList<>();
         allValues.addAll(values.getChangeValues());
         allValues.addAll(values.getNewValues());
@@ -71,37 +80,32 @@ public class ChangeValuesRender {
 
         Dict nameValues = new Dict();
         for (ChangeValues.Value value : allValues) {
-            nameValues.set(StrUtil.join(",", value.getPropertyNameFragments()), value);
+            nameValues.set(StrUtil.join("|", value.getPropertyNameFragments()), value);
         }
 
-        return MapUtil.toPathMap(nameValues, ',', MapUtil.PathMapBuilder.DEFAULT_LIST_SEPARATOR);
+        return MapUtil.toPathMap(nameValues, '|', MapUtil.PathMapBuilder.DEFAULT_LIST_SEPARATOR);
     }
 
-    public static List<ChangeValues.Value> renderRemovedValues(Map<String, PropertyDefinition> definitions,
-                                                               List<ObjectRemoved> objectRemoveds) {
+    public List<ChangeValues.Value> renderRemovedValues(List<ObjectRemoved> objectRemovedList) {
         List<ChangeValues.Value> allValues = CollectionUtil.newArrayList();
-        for (ObjectRemoved objectRemoved : objectRemoveds) {
+        for (ObjectRemoved objectRemoved : objectRemovedList) {
             String id = objectRemoved.getAffectedGlobalId().value();
             ChangeValues.Value value = new ChangeValues.Value()
                     .setPropertyId(id)
                     .setOldValue(objectRemoved.getAffectedObject().get());
-            initValueWithPath(definitions, value, id);
+            initValueWithPath(value, id, MODE.REMOVED);
             allValues.add(value);
         }
-
-        AtomicInteger count = new AtomicInteger();
 
         return distinctValues(allValues, new Callback<ChangeValues.Value>() {
             @Override
             public void invoke(ChangeValues.Value value) {
-                value.getPropertyIdFragments().add("-");
-                value.getPropertyNameFragments().add("删除:" + count.getAndIncrement());
             }
         });
     }
 
-    public static List<ChangeValues.Value> renderChangeValues(Map<String, PropertyDefinition> definitions,
-                                                              List<ValueChange> valueChanges) {
+    public List<ChangeValues.Value> renderChangeValues(
+            List<ValueChange> valueChanges) {
         List<ChangeValues.Value> result = CollectionUtil.newArrayList();
 
         for (ValueChange valueChange : valueChanges) {
@@ -112,10 +116,9 @@ public class ChangeValuesRender {
                     .setNewValue(valueChange.getRight())
                     .setOldValue(valueChange.getLeft());
 
-            PropertyDefinition lastPropertyDefinition = initValueWithPath(definitions, value, id);
-
-            lastPropertyDefinition = findPropertyDefinition(definitions, lastPropertyDefinition, valueChange.getPropertyName());
-            initValueProperty(value, lastPropertyDefinition, valueChange.getPropertyName());
+            DefinitionModel lastDefinitionModel = initValueWithPath(value, id, MODE.CHANGED);
+            lastDefinitionModel = findDefinition(lastDefinitionModel, valueChange.getPropertyName());
+            initValueProperty(value, lastDefinitionModel, valueChange.getPropertyName());
 
             result.add(value);
         }
@@ -123,7 +126,7 @@ public class ChangeValuesRender {
         return result;
     }
 
-    private static List<ChangeValues.Value> distinctValues(List<ChangeValues.Value> allValues, Callback<ChangeValues.Value> callback) {
+    private List<ChangeValues.Value> distinctValues(List<ChangeValues.Value> allValues, Callback<ChangeValues.Value> callback) {
         List<ChangeValues.Value> result = CollectionUtil.newArrayList();
 
         for (ChangeValues.Value value : allValues) {
@@ -147,44 +150,67 @@ public class ChangeValuesRender {
         return result;
     }
 
-    private static PropertyDefinition initValueWithPath(Map<String, PropertyDefinition> definitions,
-                                                        ChangeValues.Value value,
-                                                        String id) {
+    private DefinitionModel initValueWithPath(
+            ChangeValues.Value value,
+            String id, MODE mode) {
         List<String> paths = StrUtil.split(id, '/', true, true);
-        PropertyDefinition lastPropertyDefinition = null;
+        DefinitionModel lastDefinitionModel = null;
+
         for (int i = 0; i < paths.size(); i++) {
             String path = paths.get(i);
+            // Root
             if (i == 0) {
-                // Root
-                lastPropertyDefinition = definitions.get(path);
-                initValueProperty(value, lastPropertyDefinition, path);
-            } else if (path.startsWith("#")) {
-                // 集合
-                path = path.substring(1);
-                lastPropertyDefinition = lastPropertyDefinition.find(path);
-                initValueProperty(value, lastPropertyDefinition, path);
-            } else if (Validator.isNumber(path)) {
-                // 集合内某元素
-                if (lastPropertyDefinition != null) {
-                    lastPropertyDefinition = definitions.get(lastPropertyDefinition.getReferId());
-                    if (value.getOwner() != null) {
-                        initValueProperty(value, lastPropertyDefinition, path);
-                        String name = CollectionExUtil.getLast(value.getPropertyNameFragments()) + ":" + i;
-                        value.getPropertyNameFragments().set(value.getPropertyNameFragments().size() - 1, name);
-                    }
-                }
-            } else {
-                lastPropertyDefinition = findPropertyDefinition(definitions, lastPropertyDefinition, path);
-                initValueProperty(value, lastPropertyDefinition, path);
+                lastDefinitionModel = findDefinition(lastDefinitionModel, path);
+                initValueProperty(value, lastDefinitionModel, path);
+                continue;
             }
+
+            // 集合
+            if (path.startsWith("#")) {
+                lastDefinitionModel = findDefinition(lastDefinitionModel, path.substring(1));
+                initValueProperty(value, lastDefinitionModel, path);
+                continue;
+            }
+
+            // 集合内某元素
+            if (Validator.isNumber(path)) {
+                if (lastDefinitionModel != null) {
+                    lastDefinitionModel = definitions.get(lastDefinitionModel.getReferId());
+                    value.getPropertyIdFragments().add(path);
+
+                    String name = lastDefinitionModel.getName();
+                    switch (mode) {
+                        case REMOVED:
+                            name = BeanRender.renderKeyValue(value.getOldValue());
+                            break;
+
+                        case CREATED:
+                            name = BeanRender.renderKeyValue(value.getNewValue());
+                            break;
+
+                        case CHANGED:
+                            name = NodePathValueRender.render(oldBean,
+                                    StrUtil.join("/", value.getPropertyIdFragments()));
+                            break;
+                    }
+
+                    value.getPropertyNameFragments().add(name);
+                }
+
+                continue;
+            }
+
+            // 普通属性
+            lastDefinitionModel = findDefinition(lastDefinitionModel, path);
+            initValueProperty(value, lastDefinitionModel, path);
         }
 
-        return lastPropertyDefinition;
+        return lastDefinitionModel;
     }
 
-    private static void initValueProperty(ChangeValues.Value value,
-                                          PropertyDefinition definition,
-                                          String key) {
+    private void initValueProperty(ChangeValues.Value value,
+                                   DefinitionModel definition,
+                                   String key) {
         value.getPropertyIdFragments().add(key);
 
         if (definition == null) {
@@ -193,13 +219,6 @@ public class ChangeValuesRender {
         }
 
         String name = definition.getName();
-        if (definition.isClass() && !definition.getIdForPropertyNames().isEmpty()) {
-            name = key;
-        }
-
-        if (!definition.isClass() && definition.getIdForPropertyNames().contains(definition.getId())) {
-            name = Convert.toStr(ReflectUtil.getFieldValue(value.getOwner(), definition.getId()));
-        }
         value.getPropertyNameFragments().add(name);
 
         if (definition.getFormatter() != null) {
@@ -210,10 +229,8 @@ public class ChangeValuesRender {
         }
     }
 
-    private static PropertyDefinition findPropertyDefinition(Map<String, PropertyDefinition> definitions,
-                                                             PropertyDefinition parentDefinition,
-                                                             String key) {
-        PropertyDefinition definition = definitions.get(key);
+    private DefinitionModel findDefinition(DefinitionModel parentDefinition, String key) {
+        DefinitionModel definition = definitions.get(key);
         if (definition != null) {
             return definition;
         }
@@ -227,5 +244,9 @@ public class ChangeValuesRender {
         }
 
         return parentDefinition.find(key);
+    }
+
+    private enum MODE {
+        CREATED, REMOVED, CHANGED
     }
 }

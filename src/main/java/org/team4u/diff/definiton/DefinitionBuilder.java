@@ -11,25 +11,24 @@ import java.util.Map;
 /**
  * @author Jay Wu
  */
-public class PropertyDefinitionBuilder {
+public class DefinitionBuilder {
 
     private String packageName;
 
-    public PropertyDefinitionBuilder(String packageName) {
+    public DefinitionBuilder(String packageName) {
         this.packageName = packageName;
     }
 
-    public Map<String, PropertyDefinition> build() {
-        Map<String, PropertyDefinition> result = CollectionUtil.newHashMap();
+    public Map<String, DefinitionModel> build() {
+        Map<String, DefinitionModel> result = CollectionUtil.newHashMap();
 
         for (Class<?> definitionClass : ClassUtil.scanPackageByAnnotation(packageName, Definition.class)) {
             Definition definition = definitionClass.getAnnotation(Definition.class);
-            PropertyDefinition pd = buildPropertyDefinition(definition);
+            DefinitionModel pd = buildPropertyDefinition(definition);
             pd.setId(definitionClass.getName());
-            pd.setClass(true);
 
             for (Field field : ClassUtil.getDeclaredFields(definitionClass)) {
-                PropertyDefinition child = buildFiledPropertyDefinition(field);
+                DefinitionModel child = buildFiledPropertyDefinition(field);
                 if (child == null) {
                     continue;
                 }
@@ -44,24 +43,21 @@ public class PropertyDefinitionBuilder {
         return result;
     }
 
-    private PropertyDefinition buildFiledPropertyDefinition(Field field) {
+    private DefinitionModel buildFiledPropertyDefinition(Field field) {
         Definition definition = field.getAnnotation(Definition.class);
 
         if (definition == null) {
             return null;
         }
 
-        PropertyDefinition pd = buildPropertyDefinition(definition);
+        DefinitionModel pd = buildPropertyDefinition(definition);
         pd.setId(field.getName());
-        if (definition.id()) {
-            pd.getIdForPropertyNames().add(pd.getId());
-        }
         pd.setReferId(ValueUtil.defaultIfNull(pd.getReferId(), field.getType().getName()));
         return pd;
     }
 
-    private PropertyDefinition buildPropertyDefinition(Definition definition) {
-        PropertyDefinition pd = new PropertyDefinition();
+    private DefinitionModel buildPropertyDefinition(Definition definition) {
+        DefinitionModel pd = new DefinitionModel();
         pd.setName(definition.value());
 
         pd.setFormatter(ValueUtil.defaultIfEmpty(definition.formatter(), (String) null));

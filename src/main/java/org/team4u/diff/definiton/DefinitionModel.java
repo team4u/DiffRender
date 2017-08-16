@@ -9,20 +9,19 @@ import java.util.List;
 /**
  * @author Jay Wu
  */
-public class PropertyDefinition {
+public class DefinitionModel {
 
     private String id;
     private String name;
-    private boolean isClass = false;
     private List<String> idForPropertyNames = CollectionUtil.newArrayList();
     private String referId;
     private String formatter;
-    private List<PropertyDefinition> children = CollectionUtil.newArrayList();
+    private List<DefinitionModel> children = CollectionUtil.newArrayList();
 
-    public PropertyDefinition find(final String id) {
-        return CollectionExUtil.find(children, new Function<PropertyDefinition, Boolean>() {
+    public DefinitionModel find(final String id) {
+        return CollectionExUtil.find(children, new Function<DefinitionModel, Boolean>() {
             @Override
-            public Boolean invoke(PropertyDefinition definition) {
+            public Boolean invoke(DefinitionModel definition) {
                 return definition.id.equals(id);
             }
         });
@@ -32,7 +31,7 @@ public class PropertyDefinition {
         return id;
     }
 
-    public PropertyDefinition setId(String id) {
+    public DefinitionModel setId(String id) {
         this.id = id;
         return this;
     }
@@ -41,7 +40,7 @@ public class PropertyDefinition {
         return name;
     }
 
-    public PropertyDefinition setName(String name) {
+    public DefinitionModel setName(String name) {
         this.name = name;
         return this;
     }
@@ -50,16 +49,16 @@ public class PropertyDefinition {
         return referId;
     }
 
-    public PropertyDefinition setReferId(String referId) {
+    public DefinitionModel setReferId(String referId) {
         this.referId = referId;
         return this;
     }
 
-    public List<PropertyDefinition> getChildren() {
+    public List<DefinitionModel> getChildren() {
         return children;
     }
 
-    public PropertyDefinition setChildren(List<PropertyDefinition> children) {
+    public DefinitionModel setChildren(List<DefinitionModel> children) {
         this.children = children;
         return this;
     }
@@ -68,7 +67,7 @@ public class PropertyDefinition {
         return formatter;
     }
 
-    public PropertyDefinition setFormatter(String formatter) {
+    public DefinitionModel setFormatter(String formatter) {
         this.formatter = formatter;
         return this;
     }
@@ -77,17 +76,8 @@ public class PropertyDefinition {
         return idForPropertyNames;
     }
 
-    public PropertyDefinition setIdForPropertyNames(List<String> idForPropertyNames) {
+    public DefinitionModel setIdForPropertyNames(List<String> idForPropertyNames) {
         this.idForPropertyNames = idForPropertyNames;
-        return this;
-    }
-
-    public boolean isClass() {
-        return isClass;
-    }
-
-    public PropertyDefinition setClass(boolean aClass) {
-        isClass = aClass;
         return this;
     }
 
