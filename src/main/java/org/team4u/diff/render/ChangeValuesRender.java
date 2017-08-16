@@ -75,7 +75,7 @@ public class ChangeValuesRender {
                     .setPropertyId(id)
                     .setNewValue(newObject.getAffectedObject().get());
 
-            initValueWithPath(value, id, MODE.CREATED);
+            parseId(value, id, MODE.CREATED);
             allValues.add(value);
         }
 
@@ -89,15 +89,14 @@ public class ChangeValuesRender {
             ChangeValues.Value value = new ChangeValues.Value()
                     .setPropertyId(id)
                     .setOldValue(objectRemoved.getAffectedObject().get());
-            initValueWithPath(value, id, MODE.REMOVED);
+            parseId(value, id, MODE.REMOVED);
             allValues.add(value);
         }
 
         return distinctValues(allValues);
     }
 
-    public List<ChangeValues.Value> renderChangeValues(
-            List<ValueChange> valueChanges) {
+    public List<ChangeValues.Value> renderChangeValues(List<ValueChange> valueChanges) {
         List<ChangeValues.Value> result = CollectionUtil.newArrayList();
 
         for (ValueChange valueChange : valueChanges) {
@@ -108,9 +107,9 @@ public class ChangeValuesRender {
                     .setNewValue(valueChange.getRight())
                     .setOldValue(valueChange.getLeft());
 
-            DefinitionModel lastDefinitionModel = initValueWithPath(value, id, MODE.CHANGED);
+            DefinitionModel lastDefinitionModel = parseId(value, id, MODE.CHANGED);
             lastDefinitionModel = findDefinition(lastDefinitionModel, valueChange.getPropertyName());
-            initValueProperty(value, lastDefinitionModel, valueChange.getPropertyName());
+            initChangeValue(value, lastDefinitionModel, valueChange.getPropertyName());
 
             result.add(value);
         }
@@ -118,6 +117,9 @@ public class ChangeValuesRender {
         return result;
     }
 
+    /**
+     * 去除重复节点
+     */
     private List<ChangeValues.Value> distinctValues(List<ChangeValues.Value> allValues) {
         List<ChangeValues.Value> result = CollectionUtil.newArrayList();
 
@@ -141,9 +143,7 @@ public class ChangeValuesRender {
         return result;
     }
 
-    private DefinitionModel initValueWithPath(
-            ChangeValues.Value value,
-            String id, MODE mode) {
+    private DefinitionModel parseId(ChangeValues.Value value, String id, MODE mode) {
         List<String> paths = StrUtil.split(id, '/', true, true);
         DefinitionModel lastDefinitionModel = null;
 
@@ -152,60 +152,61 @@ public class ChangeValuesRender {
             // Root
             if (i == 0) {
                 lastDefinitionModel = findDefinition(lastDefinitionModel, path);
-                initValueProperty(value, lastDefinitionModel, path);
+                initChangeValue(value, lastDefinitionModel, path);
                 continue;
             }
 
             // 集合
             if (path.startsWith("#")) {
                 lastDefinitionModel = findDefinition(lastDefinitionModel, path.substring(1));
-                initValueProperty(value, lastDefinitionModel, path);
+                initChangeValue(value, lastDefinitionModel, path);
                 continue;
             }
 
             // 集合内某元素
             if (Validator.isNumber(path)) {
-                if (lastDefinitionModel != null) {
-                    lastDefinitionModel = definitions.get(lastDefinitionModel.getReferId());
-                    value.getPropertyIdFragments().add(path);
-
-                    String name = lastDefinitionModel.getName();
-                    switch (mode) {
-                        case REMOVED:
-                            name = BeanRender.renderKeyValue(value.getOldValue());
-                            break;
-
-                        case CREATED:
-                            name = BeanRender.renderKeyValue(value.getNewValue());
-                            break;
-
-                        case CHANGED:
-                            name = NodePathValueRender.render(oldBean,
-                                    StrUtil.join("/", value.getPropertyIdFragments()));
-                            break;
-                    }
-
-                    value.getPropertyNameFragments().add(name);
-                }
-
+                initListNode(value, lastDefinitionModel, path, mode);
                 continue;
             }
 
             // 普通属性
             lastDefinitionModel = findDefinition(lastDefinitionModel, path);
-            initValueProperty(value, lastDefinitionModel, path);
+            initChangeValue(value, lastDefinitionModel, path);
         }
 
         return lastDefinitionModel;
     }
 
-    private void initValueProperty(ChangeValues.Value value,
-                                   DefinitionModel definition,
-                                   String key) {
+    private void initListNode(ChangeValues.Value value, DefinitionModel definition, String path, MODE mode) {
+        if (definition != null) {
+            definition = definitions.get(definition.getReferId());
+            value.getPropertyIdFragments().add(path);
+
+            String name = definition.getName();
+            switch (mode) {
+                case REMOVED:
+                    name = BeanRender.renderKeyValue(value.getOldValue());
+                    break;
+
+                case CREATED:
+                    name = BeanRender.renderKeyValue(value.getNewValue());
+                    break;
+
+                case CHANGED:
+                    name = NodePathValueRender.render(oldBean,
+                            StrUtil.join("/", value.getPropertyIdFragments()));
+                    break;
+            }
+
+            value.getPropertyNameFragments().add(name);
+        }
+    }
+
+    private void initChangeValue(ChangeValues.Value value, DefinitionModel definition, String key) {
         value.getPropertyIdFragments().add(key);
 
         if (definition == null) {
-            value.getPropertyNameFragments().add(null);
+            value.getPropertyNameFragments().add(key);
             return;
         }
 

@@ -63,7 +63,7 @@ public class ChangeValueRenderTest {
                 result.get(0).getPropertyNameFragments().toString());
 
         Assert.assertEquals(null, result.get(0).getOldValue());
-        Assert.assertEquals("名称：602, 高度大小：无,宽度大小：无", result.get(0).getNewValue().toString());
+        Assert.assertEquals("名称：602， 高度大小：无， 宽度大小：无", result.get(0).getNewValue().toString());
     }
 
     @Test
@@ -72,7 +72,7 @@ public class ChangeValueRenderTest {
 
         Assert.assertEquals("[org.team4u.test.model.Person, #room3List, 0]", result.get(0).getPropertyIdFragments().toString());
         Assert.assertEquals("[个人, 房间列表3, 201]", result.get(0).getPropertyNameFragments().toString());
-        Assert.assertEquals("名称：201, 高度大小：大小：3, 附加信息：无,宽度大小：无", result.get(0).getOldValue().toString());
+        Assert.assertEquals("名称：201， 高度大小：大小：3， 附加信息：无， 宽度大小：无", result.get(0).getOldValue().toString());
         Assert.assertEquals(null, result.get(0).getNewValue());
     }
 

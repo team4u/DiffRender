@@ -40,7 +40,7 @@ public class Size implements Renderable {
 
     @Override
     public String renderWholeValue() {
-        return String.format("大小：%s, 附加信息：%s",
+        return String.format("大小：%s， 附加信息：%s",
                 ValueUtil.defaultIfNull(size, "无"),
                 ValueUtil.defaultIfNull(desc, "无"));
     }

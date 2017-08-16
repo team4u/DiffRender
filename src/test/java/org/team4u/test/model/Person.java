@@ -10,7 +10,7 @@ import java.util.List;
 @Definition("个人")
 public class Person {
     private String login;
-    @Definition(value = "姓名", formatter = "${c(value,def,'*')}")
+    @Definition(value = "姓名", formatter = "${c(value,'*')}")
     private String name;
     @Definition(value = "房间列表1", refer = Room.class)
     private List<Room> room1List;

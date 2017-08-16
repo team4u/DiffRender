@@ -10,7 +10,7 @@ import org.team4u.kit.core.util.ValueUtil;
 @Definition("房间")
 public class Room implements Renderable {
 
-    @Definition(value = "名称")
+    @Definition("名称")
     private String name;
 
     @Definition("高度")
@@ -48,15 +48,15 @@ public class Room implements Renderable {
 
     @Override
     public String toString() {
-        return String.format("名称：%s, 高度大小：%s,宽度大小：%s",
-                ValueUtil.defaultIfNull(name, "无"),
-                ValueUtil.defaultIfNull(height, "无"),
-                ValueUtil.defaultIfNull(weight, "无"));
+        return renderWholeValue();
     }
 
     @Override
     public String renderWholeValue() {
-        return toString();
+        return String.format("名称：%s， 高度大小：%s， 宽度大小：%s",
+                ValueUtil.defaultIfNull(name, "无"),
+                ValueUtil.defaultIfNull(height, "无"),
+                ValueUtil.defaultIfNull(weight, "无"));
     }
 
     @Override

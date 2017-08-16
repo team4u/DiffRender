@@ -7,7 +7,7 @@ import org.team4u.diff.render.NodePathValueRender;
 /**
  * @author Jay Wu
  */
-public class PathValueRenderTest {
+public class NodePathValueRenderTest {
 
     @Test
     public void render() {
