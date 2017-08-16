@@ -70,11 +70,11 @@ DiffRender有以下几个特点：
 
 在渲染差异前，我们要使用@Definition注解定义每一个需渲染的字段或者类。
 
-只有定义了@Definition的属性才会进行渲染。
+只有定义了@Definition的属性才会进行渲染，否则将忽略。
 
 因Java会将泛型信息擦除，当对集合（如List、Array）定义时，还需要指定定义集合内元素的类型（refer）。
 
-一些样例：
+使用样例：
 
 ```java
 @Definition("个人")
@@ -97,10 +97,8 @@ public class Room implements Renderable {
 
     @Definition(value = "名称")
     private String name;
-
     @Definition("高度")
     private Size height;
-
     @Definition("宽度")
     private Size weight;
 
@@ -129,7 +127,6 @@ public class Room implements Renderable {
 public class Size implements Renderable {
     @Definition("大小")
     private int size;
-
     @Definition("附加信息")
     private String desc;
 
@@ -173,14 +170,17 @@ public interface Renderable {
 
 子节点应该实现Renderable接口，用于渲染完整数据和关键数据。
 
-* 完整数据用于新增或者删除时显示完整信息
-* 关键数据用于中间路径显示可标识性的信息，如上述例子中的房间名称
+* 完整数据
+    用于新增或者删除时显示
+
+* 关键数据
+    用于中间路径显示，建议为可标识性的信息，如上述例子中的房间名称
 
 ### 格式化函数
 
-我们注意到@Definition还有formatter属性，该属性用于自定义格式化字段值，如日期、金额等可能会有特殊格式要求。
+@Definition的formatter属性，用于调用格式化函数，可以对日期、金额等特殊值进行格式化。
 
-在使用前我们需要自定义格式化函数，自定义函数必须为public的静态函数：
+首选定义格式化函数，函数必须为public的静态方法：
 
 ```java
 public class MyValueFormatter {
@@ -200,7 +200,7 @@ public class MyValueFormatter {
 }
 ```
 
-然后注册该函数，只需注册一次：
+然后注册该函数，全局只需注册一次：
 
 ```java
 ValueFormatterRegistry.INSTANCE.registerTemplateFunction(MyValueFormatter.class);
@@ -215,9 +215,18 @@ private String name;
 
 其中value为内置的上下文，里面包含了新旧值。
 
+上述例子的效果为：
+
+```
+原始值：a
+渲染值：*a
+```
+
 ### 渲染差异
 
-首先构造差异数据：
+当渲染定义完成后，我们可以进行最后的差异渲染。
+
+模拟差异数据：
 
 ```java
 public Person createPerson1() {
