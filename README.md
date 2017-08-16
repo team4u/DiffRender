@@ -295,4 +295,6 @@ System.out.println(html);
 
 请参考SimpleMarkdownRender代码实现。
 
+核心功能由ChangeValuesRender.renderToPathMap进行渲染，结果为Map，其内部结构与上述的markdown类似。
+
 END
