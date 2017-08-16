@@ -11,10 +11,10 @@ import org.javers.core.diff.changetype.NewObject;
 import org.javers.core.diff.changetype.ObjectRemoved;
 import org.javers.core.diff.changetype.ValueChange;
 import org.team4u.diff.definiton.DefinitionModel;
-import org.team4u.kit.core.action.Callback;
 import org.team4u.kit.core.action.Function;
 import org.team4u.kit.core.util.CollectionExUtil;
 import org.team4u.kit.core.util.MapUtil;
+import org.team4u.kit.core.util.ValueUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +41,20 @@ public class ChangeValuesRender {
         return toPathMap(values);
     }
 
+    public Map<String, ?> toPathMap(ChangeValues values) {
+        List<ChangeValues.Value> allValues = new ArrayList<>();
+        allValues.addAll(values.getChangeValues());
+        allValues.addAll(values.getNewValues());
+        allValues.addAll(values.getRemovedValues());
+
+        Dict nameValues = new Dict();
+        for (ChangeValues.Value value : allValues) {
+            nameValues.set(StrUtil.join("|", value.getPropertyNameFragments()), value);
+        }
+
+        return MapUtil.toPathMap(nameValues, '|', MapUtil.PathMapBuilder.DEFAULT_LIST_SEPARATOR);
+    }
+
     public ChangeValues render() {
         Javers javers = JaversBuilder.javers().build();
         Diff diff = javers.compare(oldBean, newBean);
@@ -65,25 +79,7 @@ public class ChangeValuesRender {
             allValues.add(value);
         }
 
-        return distinctValues(allValues, new Callback<ChangeValues.Value>() {
-            @Override
-            public void invoke(ChangeValues.Value value) {
-            }
-        });
-    }
-
-    public Map<String, ?> toPathMap(ChangeValues values) {
-        List<ChangeValues.Value> allValues = new ArrayList<>();
-        allValues.addAll(values.getChangeValues());
-        allValues.addAll(values.getNewValues());
-        allValues.addAll(values.getRemovedValues());
-
-        Dict nameValues = new Dict();
-        for (ChangeValues.Value value : allValues) {
-            nameValues.set(StrUtil.join("|", value.getPropertyNameFragments()), value);
-        }
-
-        return MapUtil.toPathMap(nameValues, '|', MapUtil.PathMapBuilder.DEFAULT_LIST_SEPARATOR);
+        return distinctValues(allValues);
     }
 
     public List<ChangeValues.Value> renderRemovedValues(List<ObjectRemoved> objectRemovedList) {
@@ -97,11 +93,7 @@ public class ChangeValuesRender {
             allValues.add(value);
         }
 
-        return distinctValues(allValues, new Callback<ChangeValues.Value>() {
-            @Override
-            public void invoke(ChangeValues.Value value) {
-            }
-        });
+        return distinctValues(allValues);
     }
 
     public List<ChangeValues.Value> renderChangeValues(
@@ -126,7 +118,7 @@ public class ChangeValuesRender {
         return result;
     }
 
-    private List<ChangeValues.Value> distinctValues(List<ChangeValues.Value> allValues, Callback<ChangeValues.Value> callback) {
+    private List<ChangeValues.Value> distinctValues(List<ChangeValues.Value> allValues) {
         List<ChangeValues.Value> result = CollectionUtil.newArrayList();
 
         for (ChangeValues.Value value : allValues) {
@@ -143,7 +135,6 @@ public class ChangeValuesRender {
                 continue;
             }
 
-            callback.invoke(value);
             result.add(value);
         }
 
@@ -240,7 +231,10 @@ public class ChangeValuesRender {
         }
 
         if (parentDefinition.getReferId() != null) {
-            return definitions.get(parentDefinition.getReferId());
+            definition = definitions.get(parentDefinition.getReferId());
+            if (definition != null) {
+                return ValueUtil.defaultIfNull(definition.find(key), definition);
+            }
         }
 
         return parentDefinition.find(key);
