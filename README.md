@@ -27,6 +27,22 @@ DiffRender有以下几个特点：
     <version>1.0.0</version>
 </dependency>
 
+<dependency>
+    <groupId>com.xiaoleilu</groupId>
+    <artifactId>hutool-core</artifactId>
+    <version>3.0.9</version>
+</dependency>
+<dependency>
+    <groupId>com.xiaoleilu</groupId>
+    <artifactId>hutool-log</artifactId>
+    <version>3.0.9</version>
+</dependency>
+<dependency>
+    <groupId>com.xiaoleilu</groupId>
+    <artifactId>hutool-crypto</artifactId>
+    <version>3.0.9</version>
+</dependency>
+
 <!-- 可选，Markdown渲染HTML -->
 <dependency>
     <groupId>com.atlassian.commonmark</groupId>
