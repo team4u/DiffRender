@@ -11,9 +11,5 @@ public class MyValueFormatter {
         if (value.getNewValue() != null) {
             value.setNewValue(prefix + value.getNewValue());
         }
-
-        if (value.getOldValue() != null) {
-            value.setOldValue(prefix + value.getOldValue());
-        }
     }
 }
