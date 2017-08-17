@@ -10,10 +10,10 @@
 
 ## System Requirements
 
-JDK 1.8+
+* JDK 1.8+
 
 ## HOW TO USE
-### 配置依赖(Maven:pom.xml)
+### Maven
 
 添加依赖：
 
